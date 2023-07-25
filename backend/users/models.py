@@ -1,18 +1,16 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth import get_user_model
 
-class User(AbstractUser):
-    first_name = models.CharField('Имя', max_length=150, blank=False)
-    last_name = models.CharField('Фамилия', max_length=150, blank=False)
-    email = models.EmailField('Email', max_length=200, unique=True,)
+User = get_user_model()
 
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
+
+class Subscription(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Подписчик', related_name='subscriptions')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Автор', related_name='subscribers')
 
     class Meta:
-        verbose_name = 'Пользователь'
-        verbose_name_plural = 'Пользователи'
-        ordering = ['id',]
-
-    def __str__(self):
-        return self.username
+        verbose_name='Подписка'
+        verbose_name_plural='Подписки'
+        constraints=[
+            models.UniqueConstraint(fields=['user', 'author'], name='uniq_user_author'),
+        ]

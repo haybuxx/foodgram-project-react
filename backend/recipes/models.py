@@ -1,5 +1,8 @@
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
+from django.db.models import (CASCADE,ForeignKey, Model,
+                              UniqueConstraint)
+
 
 from users.models import User
 
@@ -74,6 +77,16 @@ class IngredientRecipe(models.Model):
         verbose_name='Количесвто'
     )
 
+    class Meta:
+        verbose_name = 'Ингредиент рецепта'
+        verbose_name_plural = 'Ингредиенты рецепта'
+
+    def __str__(self):
+        return (
+            f'{self.ingredient.name} ({self.ingredient.measurement_unit})'
+            f' - {self.amount} '
+        )
+
 
 class Recipe(models.Model):
     author = models.ForeignKey(
@@ -98,3 +111,62 @@ class Recipe(models.Model):
         through_fields=('recipe', 'ingredient'),
         verbose_name='Ингредиенты'
     )
+
+    class Meta:
+        verbose_name = 'Рецепт'
+        verbose_name_plural = 'Рецепты'
+        ordering = ['-id']
+
+    def __str__(self):
+        return self.name
+
+class FavoritesShopCart(Model):
+    user = ForeignKey(
+        User,
+        verbose_name='Пользователь',
+        on_delete=CASCADE
+    )
+    recipe = ForeignKey(
+        Recipe,
+        verbose_name='Рецепт',
+        on_delete=CASCADE
+    )
+
+    class Meta:
+        abstract = True
+
+
+class FavoriteRecipe(FavoritesShopCart):
+    
+    class Meta:
+        default_related_name = 'favorites'
+        verbose_name = 'Избранный рецепт'
+        verbose_name_plural = 'Избранные рецепты'
+        ordering = ('recipe_id',)
+        constraints = [
+            UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_favorite_recipe'
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f'{self.recipe}'
+
+
+class ShoppingCart(FavoritesShopCart):
+    
+    class Meta:
+        default_related_name = 'shop_cart'
+        verbose_name = 'Список покупок'
+        verbose_name_plural = 'Список покупок'
+        ordering = ('recipe_id',)
+        constraints = [
+            UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_shopping_cart_recipe'
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f'{self.recipe}'

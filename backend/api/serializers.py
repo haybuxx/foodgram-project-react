@@ -23,8 +23,14 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('email', 'id', 'username', 'first_name',
-                  'last_name', 'is_subscribed')
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+        )
 
     def get_is_subscribed(self, obj):
         user = self.context.get('request').user
@@ -39,7 +45,12 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = IngredientRecipe
-        fields = ('id', 'name', 'measurement_unit', 'amount')
+        fields = (
+            'id',
+            'name',
+            'measurement_unit',
+            'amount',
+        )
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -65,7 +76,10 @@ class IngredientCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = IngredientRecipe
-        fields = ('id', 'amount')
+        fields = (
+            'id',
+            'amount',
+        )
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
@@ -146,3 +160,14 @@ class SubscriptonSerializer(serializers.ModelSerializer):
 
     def get_recipes_count(self, obj):
         return obj.author.recipe_set.count()
+
+class FavoriteRecipeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'id',
+            'name',
+            'image',
+            'cooking_time'
+        )

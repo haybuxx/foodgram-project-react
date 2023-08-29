@@ -3,7 +3,7 @@ from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
 from recipes.models import Ingredient, IngredientRecipe, Recipe, Tag
-from users.models import User, Subscription
+from users.models import Subscription, User
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -41,8 +41,9 @@ class UserSerializer(serializers.ModelSerializer):
 
 class IngredientRecipeSerializer(serializers.ModelSerializer):
     name = serializers.ReadOnlyField(source='ingredient.name')
-    measurement_unit = serializers.ReadOnlyField(source='ingredient.measurement_unit')
-    
+    measurement_unit = serializers.ReadOnlyField(
+        source='ingredient.measurement_unit')
+
     class Meta:
         model = IngredientRecipe
         fields = (
@@ -56,7 +57,8 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
 class RecipeSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     author = UserSerializer(read_only=True)
-    ingredients = IngredientRecipeSerializer(source='recipe_ingredients', many=True)
+    ingredients = IngredientRecipeSerializer(source='recipe_ingredients',
+                                             many=True)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
@@ -160,6 +162,7 @@ class SubscriptonSerializer(serializers.ModelSerializer):
 
     def get_recipes_count(self, obj):
         return obj.author.recipe_set.count()
+
 
 class FavoriteRecipeSerializer(serializers.ModelSerializer):
 

@@ -1,20 +1,21 @@
-from rest_framework import permissions, generics
-from django.http import HttpResponse
 from django.db.models import Sum
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
-from rest_framework.viewsets import GenericViewSet, ModelViewSet
-
-from recipes.models import Ingredient, Recipe, Tag, FavoriteRecipe, ShoppingCart, IngredientRecipe
-from users.models import Subscription
+from rest_framework import generics, permissions
 from rest_framework.decorators import action
-
-from .serializers import (IngredientSerializer, RecipeCreateSerializer,
-                          RecipeSerializer, TagSerializer, SubscriptonSerializer,
-                          FavoriteRecipeSerializer)
+from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.response import Response
 from rest_framework.status import (HTTP_201_CREATED, HTTP_204_NO_CONTENT,
                                    HTTP_400_BAD_REQUEST)
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
+
+from recipes.models import (FavoriteRecipe, Ingredient, IngredientRecipe,
+                            Recipe, ShoppingCart, Tag)
+from users.models import Subscription
+
+from .serializers import (FavoriteRecipeSerializer, IngredientSerializer,
+                          RecipeCreateSerializer, RecipeSerializer,
+                          SubscriptonSerializer, TagSerializer)
 
 
 class TagViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):

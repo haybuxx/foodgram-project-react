@@ -1,8 +1,6 @@
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
-from django.db.models import (CASCADE,ForeignKey, Model,
-                              UniqueConstraint)
-
+from django.db.models import CASCADE, ForeignKey, Model, UniqueConstraint
 
 from users.models import User
 
@@ -120,6 +118,7 @@ class Recipe(models.Model):
     def __str__(self):
         return self.name
 
+
 class FavoritesShopCart(Model):
     user = ForeignKey(
         User,
@@ -137,7 +136,7 @@ class FavoritesShopCart(Model):
 
 
 class FavoriteRecipe(FavoritesShopCart):
-    
+
     class Meta:
         default_related_name = 'favorites'
         verbose_name = 'Избранный рецепт'
@@ -155,7 +154,7 @@ class FavoriteRecipe(FavoritesShopCart):
 
 
 class ShoppingCart(FavoritesShopCart):
-    
+
     class Meta:
         default_related_name = 'shop_cart'
         verbose_name = 'Список покупок'

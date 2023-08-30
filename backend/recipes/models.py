@@ -1,6 +1,5 @@
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
-from django.db.models import CASCADE, ForeignKey, Model, UniqueConstraint
 
 from users.models import User
 
@@ -96,7 +95,10 @@ class Recipe(models.Model):
         max_length=200,
         verbose_name='Название'
     )
-    image = models.ImageField(verbose_name='Картинка')
+    image = models.ImageField(
+        'Изображение',
+        upload_to='recipes/images',
+    )
     text = models.TextField(verbose_name='Описание')
     cooking_time = models.PositiveIntegerField(
         validators=[MinValueValidator(1)],
@@ -119,53 +121,59 @@ class Recipe(models.Model):
         return self.name
 
 
-class FavoritesShopCart(Model):
-    user = ForeignKey(
+class Favorite(models.Model):
+    user = models.ForeignKey(
         User,
-        verbose_name='Пользователь',
-        on_delete=CASCADE
+        on_delete=models.CASCADE,
+        related_name='favorites',
+        verbose_name='Пользователь'
     )
-    recipe = ForeignKey(
+    recipe = models.ForeignKey(
         Recipe,
-        verbose_name='Рецепт',
-        on_delete=CASCADE
+        on_delete=models.CASCADE,
+        related_name='favorites',
+        verbose_name='Рецепт'
     )
 
     class Meta:
-        abstract = True
-
-
-class FavoriteRecipe(FavoritesShopCart):
-
-    class Meta:
-        default_related_name = 'favorites'
         verbose_name = 'Избранный рецепт'
         verbose_name_plural = 'Избранные рецепты'
-        ordering = ('recipe_id',)
         constraints = [
-            UniqueConstraint(
+            models.UniqueConstraint(
                 fields=['user', 'recipe'],
-                name='unique_favorite_recipe'
+                name='unique_favourites'
             )
         ]
+        ordering = ['user']
 
-    def __str__(self) -> str:
-        return f'{self.recipe}'
+    def __str__(self):
+        return f'{self.user} добавил в избранное {self.recipe}'
 
 
-class ShoppingCart(FavoritesShopCart):
+class ShoppingCart(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='cart',
+        verbose_name='Пользователь'
+    )
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='cart',
+        verbose_name='Рецепт'
+    )
 
     class Meta:
-        default_related_name = 'shop_cart'
-        verbose_name = 'Список покупок'
-        verbose_name_plural = 'Список покупок'
-        ordering = ('recipe_id',)
+        verbose_name = 'Корзина покупок'
+        verbose_name_plural = 'Корзина покупок'
         constraints = [
-            UniqueConstraint(
+            models.UniqueConstraint(
                 fields=['user', 'recipe'],
-                name='unique_shopping_cart_recipe'
+                name='unique_shopping_cart'
             )
         ]
+        ordering = ['user']
 
-    def __str__(self) -> str:
-        return f'{self.recipe}'
+    def __str__(self):
+        return f'{self.user} добавил {self.recipe} в корзину покупок '

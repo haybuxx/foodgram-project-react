@@ -1,21 +1,30 @@
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
 from rest_framework.decorators import action
+from djoser.views import UserViewSet
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.response import Response
 from rest_framework.status import (HTTP_201_CREATED, HTTP_204_NO_CONTENT,
                                    HTTP_400_BAD_REQUEST)
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
+from api.utils import create_object, delete_object
+from api.permissions import IsOwnerOrReadOnly
+from rest_framework.pagination import PageNumberPagination
+from api.filters import RecipeFilter
 
-from recipes.models import (FavoriteRecipe, Ingredient, IngredientRecipe,
+from recipes.models import (Favorite, Ingredient, IngredientRecipe,
                             Recipe, ShoppingCart, Tag)
 from users.models import Subscription
 
 from .serializers import (FavoriteRecipeSerializer, IngredientSerializer,
                           RecipeCreateSerializer, RecipeSerializer,
-                          SubscriptonSerializer, TagSerializer)
+                          SubscriptonSerializer, TagSerializer,
+                          UserSerializer, SubscriptionReadSerializer)
+
+
+from users.models import User
 
 
 class TagViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
@@ -42,7 +51,11 @@ class IngredientViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
 class RecipeViewSet(ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
+                          IsOwnerOrReadOnly,)
+    pagination_class = PageNumberPagination
+    filterset_class = RecipeFilter
+
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -83,8 +96,8 @@ class RecipeViewSet(ModelViewSet):
     )
     def favorite(self, request, pk=None):
         if request.method == 'POST':
-            return self.add_to_base(request, FavoriteRecipe, pk)
-        return self.delete_from_base(request.user, FavoriteRecipe, pk)
+            return self.add_to_base(request, Favorite, pk)
+        return self.delete_from_base(request.user, Favorite, pk)
 
     @action(
         methods=('post', 'delete'),
@@ -117,6 +130,42 @@ class RecipeViewSet(ModelViewSet):
         response = HttpResponse(wishlist, content_type='text/plain')
         response['Content-Disposition'] = 'attachment; filename=wishlist.txt'
         return response
+
+
+class UserViewSet(UserViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+    @action(detail=True, methods=['post', 'delete'])
+    def subscribe(self, request, id):
+        if request.method == 'POST':
+            serializer = create_object(
+                request,
+                id,
+                SubscriptonSerializer,
+                SubscriptionReadSerializer,
+                User
+            )
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED
+            )
+        delete_object(request, id, User, Subscription)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+    @action(detail=False, methods=['get'])
+    def subscriptions(self, request):
+        user = request.user
+        authors = User.objects.filter(subscribing__user=user)
+
+        paged_queryset = self.paginate_queryset(authors)
+        serializer = SubscriptionReadSerializer(
+            paged_queryset,
+            context={'request': request},
+            many=True
+        )
+        return self.get_paginated_response(serializer.data)
 
 
 class SubscribtionsListAPIView(generics.ListAPIView):

@@ -5,7 +5,9 @@ from .models import Subscription, User
 
 
 class CustomUserAdmin(UserAdmin):
-    pass
+    list_display = ('id', 'first_name', 'last_name', 'email')
+    search_fields = ('first_name',)
+    list_filter = ('email', 'first_name')
 
 
 class SubscriptionAdmin(admin.ModelAdmin):

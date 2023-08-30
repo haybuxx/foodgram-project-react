@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
+from rest_framework.fields import SerializerMethodField
 
 from recipes.models import Ingredient, IngredientRecipe, Recipe, Tag
 from users.models import Subscription, User
@@ -174,3 +175,25 @@ class FavoriteRecipeSerializer(serializers.ModelSerializer):
             'image',
             'cooking_time'
         )
+
+
+class RecipeFavoriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recipe
+        fields = (
+            'id',
+            'name',
+            'image',
+            'cooking_time'
+        )
+
+
+class SubscriptionReadSerializer(UserSerializer):
+    recipes = RecipeFavoriteSerializer(many=True, read_only=True)
+    recipes_count = SerializerMethodField(read_only=True)
+
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + ('recipes', 'recipes_count')
+
+    def get_recipes_count(self, obj):
+        return obj.recipes.count()

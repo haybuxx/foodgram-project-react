@@ -1,30 +1,27 @@
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from djoser.views import UserViewSet
 from rest_framework import generics, permissions, status
 from rest_framework.decorators import action
-from djoser.views import UserViewSet
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.status import (HTTP_201_CREATED, HTTP_204_NO_CONTENT,
                                    HTTP_400_BAD_REQUEST)
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
-from api.utils import create_object, delete_object
-from api.permissions import IsOwnerOrReadOnly
-from rest_framework.pagination import PageNumberPagination
-from api.filters import RecipeFilter
 
-from recipes.models import (Favorite, Ingredient, IngredientRecipe,
-                            Recipe, ShoppingCart, Tag)
-from users.models import Subscription
+from api.filters import RecipeFilter
+from api.permissions import IsOwnerOrReadOnly
+from api.utils import create_object, delete_object
+from recipes.models import (Favorite, Ingredient, IngredientRecipe, Recipe,
+                            ShoppingCart, Tag)
+from users.models import Subscription, User
 
 from .serializers import (FavoriteRecipeSerializer, IngredientSerializer,
                           RecipeCreateSerializer, RecipeSerializer,
-                          SubscriptonSerializer, TagSerializer,
-                          UserSerializer, SubscriptionReadSerializer)
-
-
-from users.models import User
+                          SubscriptionReadSerializer, SubscriptonSerializer,
+                          TagSerializer, UserSerializer)
 
 
 class TagViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
@@ -55,7 +52,6 @@ class RecipeViewSet(ModelViewSet):
                           IsOwnerOrReadOnly,)
     pagination_class = PageNumberPagination
     filterset_class = RecipeFilter
-
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -152,7 +148,6 @@ class UserViewSet(UserViewSet):
             )
         delete_object(request, id, User, Subscription)
         return Response(status=status.HTTP_204_NO_CONTENT)
-
 
     @action(detail=False, methods=['get'])
     def subscriptions(self, request):

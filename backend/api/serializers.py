@@ -8,12 +8,14 @@ from users.models import Subscription, User
 
 
 class TagSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Tag
         fields = '__all__'
 
 
 class IngredientSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Ingredient
         fields = '__all__'
@@ -68,10 +70,16 @@ class RecipeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_is_favorited(self, obj):
-        return False
+        user = self.context.get('request').user
+        if user.is_anonymous:
+            return False
+        return user.favorites.filter(recipe=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
-        return False
+        user = self.context.get('request').user
+        if user.is_anonymous:
+            return False
+        return user.shopping_cart.filter(recipe=obj).exists()
 
 
 class IngredientCreateSerializer(serializers.ModelSerializer):
@@ -102,33 +110,39 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         tags = validated_data.pop('tags', None)
-        if not tags:
-            raise ValidationError('Выберите хотя бы один тег')
         ingredients = validated_data.pop('ingredients', None)
-        if not ingredients:
-            raise ValidationError('Укажите зотя бы один ингредиент')
+        self.validate_tags_and_ingredients(tags, ingredients)
+
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags)
-        IngredientRecipe.objects.bulk_create([
-            IngredientRecipe(ingredient=i.get(
-                'id'), recipe=recipe, amount=i.get('amount'))
-            for i in ingredients
-        ])
+        self.create_ingredient_recipe_entries(recipe, ingredients)
         return recipe
 
     def update(self, instance, validated_data):
         tags = validated_data.pop('tags', None)
+        ingredients = validated_data.pop('ingredients', None)
+
         if tags:
             instance.tags.set(tags)
-        ingredients = validated_data.pop('ingredients', None)
+
         if ingredients:
             instance.ingredients.clear()
-            IngredientRecipe.objects.bulk_create([
-                IngredientRecipe(ingredient=i.get(
-                    'id'), recipe=instance, amount=i.get('amount'))
-                for i in ingredients
-            ])
+            self.create_ingredient_recipe_entries(instance, ingredients)
+
         return instance
+
+    def validate_tags_and_ingredients(self, tags, ingredients):
+        if not tags:
+            raise ValidationError('Выберите хотя бы один тег')
+        if not ingredients:
+            raise ValidationError('Укажите хотя бы один ингредиент')
+
+    def create_ingredient_recipe_entries(self, recipe, ingredients):
+        IngredientRecipe.objects.bulk_create([
+            IngredientRecipe(ingredient=ingredient.get('id'),
+                             recipe=recipe, amount=ingredient.get('amount'))
+            for ingredient in ingredients
+        ])
 
     def to_representation(self, instance):
         serializer = RecipeSerializer(instance, context=self.context)
@@ -178,6 +192,7 @@ class FavoriteRecipeSerializer(serializers.ModelSerializer):
 
 
 class RecipeFavoriteSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Recipe
         fields = (

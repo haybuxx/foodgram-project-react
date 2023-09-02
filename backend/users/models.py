@@ -6,7 +6,10 @@ class User(AbstractUser):
     REQUIRED_FIELDS = ('username', 'first_name', 'last_name')
     USERNAME_FIELD = 'email'
     email = models.EmailField(
-        unique=True, max_length=254, verbose_name='email')
+        unique=True,
+        max_length=254,
+        verbose_name='email'
+    )
 
 
 class Subscription(models.Model):

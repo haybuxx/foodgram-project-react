@@ -25,15 +25,13 @@ def create_object(request, pk, serializer_in, serializer_out, model):
 def delete_object(request, pk, model_object, model_for_delete_object):
     user = request.user
 
-    obj_recipe = get_object_or_404(model_object, id=pk)
-    obj_subscription = get_object_or_404(model_object, id=pk)
-
     if model_for_delete_object is Subscription:
-        object = get_object_or_404(
-            model_for_delete_object, user=user, author=obj_subscription
+        obj_for_delete = get_object_or_404(
+            model_for_delete_object, user=user, author=pk
         )
     else:
-        object = get_object_or_404(
-            model_for_delete_object, user=user, recipe=obj_recipe
+        obj_for_delete = get_object_or_404(
+            model_for_delete_object, user=user, recipe=pk
         )
-    object.delete()
+
+    obj_for_delete.delete()

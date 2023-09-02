@@ -48,7 +48,9 @@ class Ingredient(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=('name', 'measurement_unit'),
-                name='unique_name_measurement')]
+                name='unique_name_measurement'
+            )
+        ]
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
         ordering = ('id',)
@@ -71,7 +73,7 @@ class IngredientRecipe(models.Model):
     )
     amount = models.PositiveIntegerField(
         validators=[MinValueValidator(1)],
-        verbose_name='Количесвто'
+        verbose_name='Количество'
     )
 
     class Meta:
@@ -141,7 +143,7 @@ class Favorite(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'recipe'],
-                name='unique_favourites'
+                name='unique_favorites'
             )
         ]
         ordering = ['user']

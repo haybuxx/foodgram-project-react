@@ -7,14 +7,12 @@ from users.models import Subscription, User
 
 
 class TagSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Tag
         fields = '__all__'
 
 
 class IngredientSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Ingredient
         fields = '__all__'
@@ -179,7 +177,6 @@ class SubscriptonSerializer(serializers.ModelSerializer):
 
 
 class FavoriteRecipeSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Recipe
         fields = (
@@ -191,7 +188,6 @@ class FavoriteRecipeSerializer(serializers.ModelSerializer):
 
 
 class RecipeFavoriteSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Recipe
         fields = (

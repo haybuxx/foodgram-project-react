@@ -1,8 +1,9 @@
 from django.core.exceptions import ValidationError
 from drf_extra_fields.fields import Base64ImageField
-from recipes.models import Ingredient, IngredientRecipe, Recipe, Tag
 from rest_framework import serializers
 from rest_framework.fields import SerializerMethodField
+
+from recipes.models import Ingredient, IngredientRecipe, Recipe, Tag
 from users.models import Subscription, User
 
 
@@ -74,9 +75,8 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def get_is_in_shopping_cart(self, obj):
         user = self.context.get('request').user
-        if user.is_anonymous:
-            return False
-        return user.shopping_cart.filter(recipe=obj).exists()
+        return (user.is_authenticated
+                and user.cart.filter(recipe=obj).exists())
 
 
 class IngredientCreateSerializer(serializers.ModelSerializer):
@@ -176,17 +176,6 @@ class SubscriptonSerializer(serializers.ModelSerializer):
         return obj.author.recipe_set.count()
 
 
-class FavoriteRecipeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Recipe
-        fields = (
-            'id',
-            'name',
-            'image',
-            'cooking_time'
-        )
-
-
 class RecipeFavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
@@ -207,3 +196,12 @@ class SubscriptionReadSerializer(UserSerializer):
 
     def get_recipes_count(self, obj):
         return obj.recipes.count()
+
+
+class FavoriteOrCartSerializer(serializers.ModelSerializer):
+    image = Base64ImageField()
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
+        read_only_fields = ('id', 'name', 'image', 'cooking_time')

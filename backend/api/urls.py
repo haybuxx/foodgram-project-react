@@ -8,11 +8,11 @@ router = DefaultRouter()
 router.register('tags', TagViewSet)
 router.register('ingredients', IngredientViewSet)
 router.register('recipes', RecipeViewSet)
-router.register('users', UserViewSet, basename='users')
+router.register('users', UserViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('users/subscriptions/', SubscribtionsListAPIView.as_view()),
     path('', include('djoser.urls')),
+    path('users/subscriptions/', SubscribtionsListAPIView.as_view()),
     path('auth/', include('djoser.urls.authtoken')),
 ]

@@ -1,12 +1,6 @@
-from api.filters import RecipeFilter
-from api.permissions import IsOwnerOrReadOnly
-from api.utils import create_object, delete_object
-from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from djoser.views import UserViewSet
-from recipes.models import (Favorite, Ingredient, IngredientRecipe, Recipe,
-                            ShoppingCart, Tag)
+from django_filters import rest_framework as filters
 from rest_framework import generics, permissions, status
 from rest_framework.decorators import action
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
@@ -14,13 +8,20 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.status import (HTTP_201_CREATED, HTTP_204_NO_CONTENT,
                                    HTTP_400_BAD_REQUEST)
-from rest_framework.viewsets import GenericViewSet, ModelViewSet
+from rest_framework.viewsets import (GenericViewSet, ModelViewSet,
+                                     ReadOnlyModelViewSet)
+
+from api.filters import RecipeFilter
+from api.permissions import IsOwnerOrReadOnly
+from api.utils import create_object, delete_object
+from recipes.models import (Favorite, Ingredient, IngredientRecipe, Recipe,
+                            ShoppingCart, Tag)
 from users.models import Subscription, User
 
-from .serializers import (FavoriteRecipeSerializer, IngredientSerializer,
-                          RecipeCreateSerializer, RecipeSerializer,
-                          SubscriptionReadSerializer, SubscriptonSerializer,
-                          TagSerializer, UserSerializer)
+from .serializers import (FavoriteOrCartSerializer, IngredientSerializer,
+                          RecipeCreateSerializer, RecipeFavoriteSerializer,
+                          RecipeSerializer, SubscriptionReadSerializer,
+                          SubscriptonSerializer, TagSerializer, UserSerializer)
 
 
 class TagViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
@@ -50,6 +51,7 @@ class RecipeViewSet(ModelViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,
                           IsOwnerOrReadOnly,)
     pagination_class = PageNumberPagination
+    filter_backends = [filters.DjangoFilterBackend]
     filterset_class = RecipeFilter
 
     def perform_create(self, serializer):
@@ -60,18 +62,19 @@ class RecipeViewSet(ModelViewSet):
             return RecipeCreateSerializer
         return super().get_serializer_class()
 
-    def add_to_base(self, request, model, pk):
+    def add_to_base(self, request, model, pk, serializer_class):
         recipe = get_object_or_404(Recipe, pk=pk)
         _, created = model.objects.get_or_create(
             recipe=recipe, user=request.user
         )
         if created:
-            serializer = FavoriteRecipeSerializer(
+            serializer = serializer_class(
                 recipe,
                 context={'request': request}
             )
             return Response(serializer.data, status=HTTP_201_CREATED)
-        return Response(status=HTTP_400_BAD_REQUEST)
+        return Response({"errors": "Обект уже существует!"},
+                        status=HTTP_400_BAD_REQUEST)
 
     def delete_from_base(self, user, model, pk):
         recipe = get_object_or_404(Recipe, pk=pk)
@@ -79,7 +82,8 @@ class RecipeViewSet(ModelViewSet):
             user=user, recipe=recipe
         )
         if not databse_obj.exists():
-            return Response(status=HTTP_400_BAD_REQUEST)
+            return Response({"errors": "Обекта не существует!"},
+                            status=HTTP_400_BAD_REQUEST)
         databse_obj.delete()
         return Response(status=HTTP_204_NO_CONTENT)
 
@@ -87,49 +91,80 @@ class RecipeViewSet(ModelViewSet):
         methods=('post', 'delete'),
         url_path='favorite',
         detail=True,
-        permission_classes=(permissions.IsAuthenticated,)
+        permission_classes=(permissions.IsAuthenticated,),
+        serializer_class=RecipeFavoriteSerializer
     )
     def favorite(self, request, pk=None):
         if request.method == 'POST':
-            return self.add_to_base(request, Favorite, pk)
+            return self.add_to_base(request, Favorite, pk,
+                                    self.get_serializer_class())
         return self.delete_from_base(request.user, Favorite, pk)
 
     @action(
-        methods=('post', 'delete'),
-        url_path='shopping_cart',
+        methods=('POST', 'DELETE'),
         detail=True,
         permission_classes=(permissions.IsAuthenticated,)
     )
     def shopping_cart(self, request, pk=None):
         if request.method == 'POST':
-            return self.add_to_base(request, ShoppingCart, pk)
-        return self.delete_from_base(request.user, ShoppingCart, pk)
+            recipe = get_object_or_404(Recipe, id=pk)
+            ShoppingCart.objects.create(user=request.user, recipe=recipe)
+            serializer = FavoriteOrCartSerializer(recipe)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        if request.method == 'DELETE':
+            recipe = ShoppingCart.objects.filter(user=request.user,
+                                                 recipe__id=pk)
+            if recipe.exists():
+                recipe.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
-        methods=('get',),
-        url_path='download_shopping_cart',
+        methods=('GET',),
         detail=False,
         permission_classes=(permissions.IsAuthenticated,)
     )
     def download_shopping_cart(self, request):
-        ingredients = IngredientRecipe.objects.filter(
-            recipe__shop_cart__user=request.user
-        ).values(
-            'ingredient__name', 'ingredient__measurement_unit'
-        ).annotate(total_sum=Sum('amount'))
-        wishlist = ''
-        for ingredient in ingredients:
-            wishlist += (f'{ingredient["ingredient__name"]}: '
-                         f'{ingredient["total_sum"]}')
-            wishlist += f'{ingredient["ingredient__measurement_unit"]}.\n'
-        response = HttpResponse(wishlist, content_type='text/plain')
-        response['Content-Disposition'] = 'attachment; filename=wishlist.txt'
+        cart_items = ShoppingCart.objects.filter(user=request.user)
+        cart = {}
+        for item in cart_items:
+            recipe = item.recipe
+            for ingredient in recipe.ingredients.all():
+                if ingredient.id in cart.keys():
+                    cart[
+                        ingredient.id
+                    ]['amount'] += IngredientRecipe.objects.get(
+                        recipe=recipe, ingredient=ingredient).amount
+                else:
+                    cart[ingredient.id] = {
+                        "name": ingredient.name,
+                        "amount": IngredientRecipe.objects.get(
+                            recipe=recipe,
+                            ingredient=ingredient
+                        ).amount,
+                        "measurement_unit": ingredient.measurement_unit
+                    }
+
+        result = []
+        for id, data in cart.items():
+            result.append(
+                f"{data['name']}: {data['amount']} {data['measurement_unit']}"
+            )
+        response = HttpResponse('\n'.join(result).encode(
+            'utf-8'), content_type='text/plain')
+        response['Content-Disposition'] = 'attachment; filename="list.txt"'
         return response
 
 
-class UserViewSet(UserViewSet):
+class UserViewSet(ReadOnlyModelViewSet):
     queryset = User.objects.all()
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly,]
     serializer_class = UserSerializer
+
+    @action(detail=False, methods=['get'],
+            permission_classes=[permissions.IsAuthenticated])
+    def me(self, request):
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post', 'delete'])
     def subscribe(self, request, id):

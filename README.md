@@ -11,7 +11,7 @@ https://yps14.ddns.net/
 Данные для проверки работы приложения:
 Суперпользователь:
 ```
-email: test@gmail.com
+email: a2@a.ru
 password: NRjeSf2003!
 ```
 

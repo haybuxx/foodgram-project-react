@@ -13,7 +13,7 @@ from rest_framework.viewsets import (GenericViewSet, ModelViewSet,
 
 from api.filters import RecipeFilter
 from api.permissions import IsOwnerOrReadOnly
-from api.utils import create_object, delete_object
+from api.utils import delete_object
 from recipes.models import (Favorite, Ingredient, IngredientRecipe, Recipe,
                             ShoppingCart, Tag)
 from users.models import Subscription, User

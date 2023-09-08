@@ -157,7 +157,7 @@ class RecipeViewSet(ModelViewSet):
 
 class UserViewSet(ReadOnlyModelViewSet):
     queryset = User.objects.all()
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly,]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, ]
     serializer_class = UserSerializer
 
     @action(detail=False, methods=['get'],

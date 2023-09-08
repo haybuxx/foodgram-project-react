@@ -167,26 +167,28 @@ class UserViewSet(ReadOnlyModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post', 'delete'])
-    def subscribe(self, request, id):
+    def subscribe(self, request, pk):
         if request.method == 'POST':
-            serializer = create_object(
-                request,
-                id,
-                SubscriptonSerializer,
-                SubscriptionReadSerializer,
-                User
-            )
-            return Response(
-                serializer.data,
-                status=status.HTTP_201_CREATED
-            )
-        delete_object(request, id, User, Subscription)
+            author = get_object_or_404(User, id=pk)
+            subscription, created = Subscription.objects.get_or_create(
+                user=request.user, author=author)
+            if created:
+                serializer = self.get_serializer(author)
+                return Response(
+                    serializer.data,
+                    status=status.HTTP_201_CREATED
+                )
+            return Response({
+                "errors": "Exists"}, status=status.HTTP_400_BAD_REQUEST)
+        delete_object(request, pk, User, Subscription)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'])
     def subscriptions(self, request):
         user = request.user
-        authors = User.objects.filter(subscribing__user=user)
+        subscriptions = Subscription.objects.filter(user=user)
+        authors = User.objects.filter(
+            id__in=[s.author_id for s in subscriptions])
 
         paged_queryset = self.paginate_queryset(authors)
         serializer = SubscriptionReadSerializer(

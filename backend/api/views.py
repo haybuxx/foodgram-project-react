@@ -4,12 +4,12 @@ from django_filters import rest_framework as filters
 from rest_framework import generics, permissions, status
 from rest_framework.decorators import action
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.status import (HTTP_201_CREATED, HTTP_204_NO_CONTENT,
                                    HTTP_400_BAD_REQUEST)
 from rest_framework.viewsets import (GenericViewSet, ModelViewSet,
                                      ReadOnlyModelViewSet)
+from api.paginators import PageLimitPagination
 
 from api.filters import RecipeFilter
 from api.permissions import IsOwnerOrReadOnly
@@ -50,7 +50,7 @@ class RecipeViewSet(ModelViewSet):
     serializer_class = RecipeSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,
                           IsOwnerOrReadOnly,)
-    pagination_class = PageNumberPagination
+    pagination_class = PageLimitPagination
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = RecipeFilter
 
@@ -159,6 +159,7 @@ class UserViewSet(ReadOnlyModelViewSet):
     queryset = User.objects.all()
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, ]
     serializer_class = UserSerializer
+    pagination_class = PageLimitPagination
 
     @action(detail=False, methods=['get'],
             permission_classes=[permissions.IsAuthenticated])

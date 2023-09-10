@@ -29,10 +29,13 @@ class TagInline(admin.TabularInline):
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'author')
+    list_display = ('id', 'name', 'author', 'count_favorites',)
     list_filter = ('author', 'name', 'tags')
     exclude = ('tags',)
     inlines = [IngredientRecipeInline, TagInline]
+
+    def count_favorites(self, obj: Recipe) -> int:
+        return obj.favorites.count()
 
 
 @admin.register(Favorite)

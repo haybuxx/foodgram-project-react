@@ -1,14 +1,14 @@
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters import rest_framework as filters
+from djoser.views import UserViewSet as BaseUserViewSet
 from rest_framework import generics, permissions, status
 from rest_framework.decorators import action
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.response import Response
 from rest_framework.status import (HTTP_201_CREATED, HTTP_204_NO_CONTENT,
                                    HTTP_400_BAD_REQUEST)
-from rest_framework.viewsets import (GenericViewSet, ModelViewSet,
-                                     ReadOnlyModelViewSet)
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from api.filters import RecipeFilter
 from api.paginators import PageLimitPagination
@@ -17,14 +17,11 @@ from api.utils import delete_object
 from recipes.models import (Favorite, Ingredient, IngredientRecipe, Recipe,
                             ShoppingCart, Tag)
 from users.models import Subscription, User
-from djoser.views import UserViewSet as BaseUserViewSet
 
 from .serializers import (FavoriteOrCartSerializer, IngredientSerializer,
                           RecipeCreateSerializer, RecipeFavoriteSerializer,
                           RecipeSerializer, SubscriptionReadSerializer,
-                          TagSerializer, UserSerializer,
-                          SubscriptonSerializer, #SubscriptionSerializer,
-                          )
+                          TagSerializer, UserSerializer)
 
 
 class TagViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):

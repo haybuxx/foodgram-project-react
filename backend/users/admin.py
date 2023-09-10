@@ -12,7 +12,7 @@ class CustomUserAdmin(UserAdmin):
 
 class SubscriptionAdmin(admin.ModelAdmin):
     list_display = ['user', 'author']
-    search_fields = ['user', 'author']
+    search_fields = ['user__email', 'author__email']
     list_filter = ['user', 'author']
     empty_value_display = '-пусто-'
 

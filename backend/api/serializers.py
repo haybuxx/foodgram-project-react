@@ -2,7 +2,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import F
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
-from rest_framework.fields import SerializerMethodField
+# from rest_framework.fields import SerializerMethodField
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
 from rest_framework.validators import UniqueTogetherValidator
 

@@ -17,11 +17,14 @@ from api.utils import delete_object
 from recipes.models import (Favorite, Ingredient, IngredientRecipe, Recipe,
                             ShoppingCart, Tag)
 from users.models import Subscription, User
+from djoser.views import UserViewSet as BaseUserViewSet
 
 from .serializers import (FavoriteOrCartSerializer, IngredientSerializer,
                           RecipeCreateSerializer, RecipeFavoriteSerializer,
                           RecipeSerializer, SubscriptionReadSerializer,
-                          SubscriptonSerializer, TagSerializer, UserSerializer)
+                          TagSerializer, UserSerializer,
+                          SubscriptonSerializer, #SubscriptionSerializer,
+                          )
 
 
 class TagViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
@@ -155,22 +158,22 @@ class RecipeViewSet(ModelViewSet):
         return response
 
 
-class UserViewSet(ReadOnlyModelViewSet):
+class UserRetriveAPIView(generics.RetrieveAPIView):
     queryset = User.objects.all()
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly, ]
+    serializer_class = UserSerializer
+    permission_classes = [permissions.AllowAny,]
+
+
+class UserViewSet(BaseUserViewSet):
+    queryset = User.objects.all()
+    # permission_classes = [permissions.IsAuthenticatedOrReadOnly, ]
     serializer_class = UserSerializer
     pagination_class = PageLimitPagination
 
-    @action(detail=False, methods=['get'],
-            permission_classes=[permissions.IsAuthenticated])
-    def me(self, request):
-        serializer = self.get_serializer(request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
     @action(detail=True, methods=['post', 'delete'])
-    def subscribe(self, request, pk):
+    def subscribe(self, request, id):
         if request.method == 'POST':
-            author = get_object_or_404(User, id=pk)
+            author = get_object_or_404(User, id=id)
             subscription, created = Subscription.objects.get_or_create(
                 user=request.user, author=author)
             if created:
@@ -179,9 +182,7 @@ class UserViewSet(ReadOnlyModelViewSet):
                     serializer.data,
                     status=status.HTTP_201_CREATED
                 )
-            return Response({
-                "errors": "Exists"}, status=status.HTTP_400_BAD_REQUEST)
-        delete_object(request, pk, User, Subscription)
+        delete_object(request, id, User, Subscription)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'])
@@ -199,12 +200,11 @@ class UserViewSet(ReadOnlyModelViewSet):
         )
         return self.get_paginated_response(serializer.data)
 
+# class SubscribtionsListAPIView(generics.ListAPIView):
+#     queryset = Subscription.objects.all()
+#     serializer_class = SubscriptonSerializer
+#     permission_classes = (permissions.IsAuthenticated,)
 
-class SubscribtionsListAPIView(generics.ListAPIView):
-    queryset = Subscription.objects.all()
-    serializer_class = SubscriptonSerializer
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        return queryset.filter(user=self.request.user)
+#     def get_queryset(self):
+#         queryset = super().get_queryset()
+#         return queryset.filter(user=self.request.user)

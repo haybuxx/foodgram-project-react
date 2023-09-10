@@ -33,6 +33,11 @@ class RecipeAdmin(admin.ModelAdmin):
     list_filter = ('author', 'name', 'tags')
     exclude = ('tags',)
     inlines = [IngredientRecipeInline, TagInline]
+    search_fields = (
+        'name',
+        'author__username',
+        'tags__name',
+    )
 
     def count_favorites(self, obj: Recipe) -> int:
         return obj.favorites.count()

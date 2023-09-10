@@ -9,9 +9,9 @@ from rest_framework.status import (HTTP_201_CREATED, HTTP_204_NO_CONTENT,
                                    HTTP_400_BAD_REQUEST)
 from rest_framework.viewsets import (GenericViewSet, ModelViewSet,
                                      ReadOnlyModelViewSet)
-from api.paginators import PageLimitPagination
 
 from api.filters import RecipeFilter
+from api.paginators import PageLimitPagination
 from api.permissions import IsOwnerOrReadOnly
 from api.utils import delete_object
 from recipes.models import (Favorite, Ingredient, IngredientRecipe, Recipe,

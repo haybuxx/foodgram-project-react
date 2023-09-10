@@ -158,7 +158,7 @@ class RecipeViewSet(ModelViewSet):
 class UserRetriveAPIView(generics.RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.AllowAny,]
+    permission_classes = [permissions.AllowAny, ]
 
 
 class UserViewSet(BaseUserViewSet):

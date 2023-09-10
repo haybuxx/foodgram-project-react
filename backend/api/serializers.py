@@ -2,7 +2,6 @@ from django.core.exceptions import ValidationError
 from django.db.models import F
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
-# from rest_framework.fields import SerializerMethodField
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
 from rest_framework.validators import UniqueTogetherValidator
 
@@ -210,9 +209,6 @@ class SubscriptonSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Нельзя подписаться на себя')
         return data
 
-    # def get_is_subscribed(self, obj):
-    #     return obj.author.subscriptions.filter(author=obj.user).exists()
-
     def get_recipes_count(self, obj):
         return obj.author.recipe_set.count()
 
@@ -229,7 +225,6 @@ class RecipeFavoriteSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionReadSerializer(UserSerializer):
-    # recipes = RecipeFavoriteSerializer(many=True, read_only=True)
     recipes = SerializerMethodField()
     recipes_count = SerializerMethodField(read_only=True)
 

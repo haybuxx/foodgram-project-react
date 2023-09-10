@@ -163,7 +163,6 @@ class UserRetriveAPIView(generics.RetrieveAPIView):
 
 class UserViewSet(BaseUserViewSet):
     queryset = User.objects.all()
-    # permission_classes = [permissions.IsAuthenticatedOrReadOnly, ]
     serializer_class = UserSerializer
     pagination_class = PageLimitPagination
 
@@ -196,12 +195,3 @@ class UserViewSet(BaseUserViewSet):
             many=True
         )
         return self.get_paginated_response(serializer.data)
-
-# class SubscribtionsListAPIView(generics.ListAPIView):
-#     queryset = Subscription.objects.all()
-#     serializer_class = SubscriptonSerializer
-#     permission_classes = (permissions.IsAuthenticated,)
-
-#     def get_queryset(self):
-#         queryset = super().get_queryset()
-#         return queryset.filter(user=self.request.user)
